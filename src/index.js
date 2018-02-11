@@ -1,9 +1,11 @@
+import _ from 'lodash';
 import React, { Component } from 'react';
 // ^ Only creates and manages components, (below) is what renders to the DOM
 import ReactDOM from 'react-dom';
 import YTSearch from 'youtube-api-search';
 import SearchBar from './components/searchBar';
 import VideoList from './components/videoList';
+import VideoDetail from './components/videoDetail';
 
 const youTubeApiKey = 'AIzaSyB5SX3vWsqJ2QtdFcU6ibHCGfeRlneuQCc'
 
@@ -28,21 +30,38 @@ class App extends Component {
     constructor(props) {
         super(props);
 
-        this.state = { videos: [] };
+        this.state = {
+            videos: [],
+            selectedVideo: null
+        };
 
-        YTSearch({key: youTubeApiKey, term: 'volvo'}, (videos) => {
-            this.setState({ videos });
+        this.videoSearch('volvo')
+    }
+
+    videoSearch(term) {
+        YTSearch({key: youTubeApiKey, term: term}, (videos) => {
+            this.setState({
+                videos: videos,
+                selectedVideo: videos[0]
+            });
             //^ same as this.setState({videos:videos})
         });
     }
 
+    //Setting state causes component to re-render
 
     render() {
+        //Way to throttle user input to make sure they don't search too often
+        const videoSearch = _.debounce((term) => { this.videoSearch(term) }, 300);
+
         console.log(this.state)
         return (
             <div>
-                <SearchBar />
-                <VideoList videos={this.state.videos} />
+                <SearchBar onSearchTermChange={videoSearch} />
+                <div className="row">
+                <VideoDetail video={this.state.selectedVideo} />
+                <VideoList onVideoSelect={selectedVideo => this.setState({selectedVideo}) } videos={this.state.videos} />
+                </div>
             </div>
         );
     }
